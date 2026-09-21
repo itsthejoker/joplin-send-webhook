@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { attachWebhookControls } = require('../src/contentScript/webview');
+const { attachWebhookControls, installWebhookControls } = require('../src/contentScript/webview');
 const initialMatchMedia = window.matchMedia;
 
 function encoded(value) {
@@ -134,6 +134,26 @@ describe('webhook webview controls', () => {
     button.click();
     await Promise.resolve();
     expect(bridge.postMessage).toHaveBeenCalledTimes(1);
+  });
+
+  test('attaches controls added after repeated rendered-note updates without duplicate handlers', async () => {
+    document.body.innerHTML = '';
+    const source = 'url=https://example.test/hook\nbutton_text=Later';
+    const bridge = { postMessage: jest.fn(() => Promise.resolve(response())) };
+    installWebhookControls(document, bridge);
+    installWebhookControls(document, bridge);
+
+    const control = createControl(source, 'Later');
+    document.dispatchEvent(new Event('joplin-noteDidUpdate'));
+    document.dispatchEvent(new Event('joplin-noteDidUpdate'));
+    control.querySelector('.webhook-button').click();
+    await Promise.resolve();
+
+    expect(bridge.postMessage).toHaveBeenCalledTimes(1);
+    expect(bridge.postMessage).toHaveBeenCalledWith(
+      'webhook-content-script',
+      { type: 'sendWebhook', source },
+    );
   });
 
   test.each([

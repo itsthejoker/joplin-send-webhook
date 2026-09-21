@@ -3,6 +3,7 @@
 
   var GENERIC_ERROR = 'The webhook request could not be completed.';
   var ATTACHED_MARKER = 'webhookControlAttached';
+  var installedRoots = new WeakSet();
 
   function decodeSource(encoded) {
     if (typeof encoded !== 'string' || encoded.length === 0) throw new Error('Invalid webhook source');
@@ -153,11 +154,24 @@
     }
   }
 
+  function installWebhookControls(root, bridge) {
+    attachWebhookControls(root, bridge);
+    if (!root || typeof root.addEventListener !== 'function' || installedRoots.has(root)) return;
+
+    installedRoots.add(root);
+    root.addEventListener('joplin-noteDidUpdate', function() {
+      attachWebhookControls(root, bridge);
+    });
+  }
+
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { attachWebhookControls: attachWebhookControls };
+    module.exports = {
+      attachWebhookControls: attachWebhookControls,
+      installWebhookControls: installWebhookControls,
+    };
   }
 
   if (typeof document !== 'undefined' && typeof webviewApi !== 'undefined') {
-    attachWebhookControls(document, webviewApi);
+    installWebhookControls(document, webviewApi);
   }
 })();
