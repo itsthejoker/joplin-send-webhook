@@ -111,11 +111,14 @@ describe('webhook-settings Markdown renderer', () => {
     expect(renderWebhook('url=https://example.com')).toContain('>Send Webhook</button>');
   });
 
-  test('declares webview assets in the required order', () => {
-    expect(contentScript({}).assets()).toEqual([
-      { name: './contentScript/webview.js' },
-      { name: './contentScript/webhook.css' },
+  test('declares archive-root webview assets in CSS then JS order', () => {
+    const assets = contentScript({}).assets();
+
+    expect(assets).toEqual([
+      { name: 'webhook.css' },
+      { name: 'webview.js' },
     ]);
+    expect(assets.every((asset: { name: string }) => !asset.name.includes('/'))).toBe(true);
   });
 
   test('strips one final newline and preserves UTF-8 source exactly', () => {

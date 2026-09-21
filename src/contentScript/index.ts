@@ -67,8 +67,8 @@ export default function contentScript(context: { contentScriptId?: string }) {
 
     assets() {
       return [
-        { name: './contentScript/webview.js' },
-        { name: './contentScript/webhook.css' },
+        { name: 'webhook.css' },
+        { name: 'webview.js' },
       ];
     },
   };
