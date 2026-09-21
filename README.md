@@ -79,7 +79,7 @@ Replace the illustrative 32-character ID with the ID of the source note.
 | `success_confetti` | Optional; `false` | Must be exactly `true` or `false`. `true` shows confetti after a successful response. |
 | `print_response` | Optional; `false` | Must be exactly `true` or `false`. `true` displays the full textual response below the status. |
 | `button_text` | Optional; `Send Webhook` | Label shown on the button; it cannot be empty. |
-| `background_color` | Optional | Button background: supported CSS color keyword, hex color, or `rgb`/`rgba`/`hsl`/`hsla` value. |
+| `background_color` | Optional | Button background: a CSS named keyword; `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`; or `rgb()`/`rgba()` and `hsl()`/`hsla()` with numeric or percentage components. |
 
 The request body is always sent as raw text—there is no form encoding. When
 `data` is JSON, the plugin infers `Content-Type: application/json`; for literal
