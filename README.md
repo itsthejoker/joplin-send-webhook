@@ -7,9 +7,11 @@ leaving Joplin.
 
 ## Install
 
-Build the plugin, then install the generated JPL in Joplin Desktop:
+Webhook Button requires Joplin Desktop 3.7 or later. From a fresh clone, install
+the locked dependencies before building the plugin:
 
 ```sh
+npm ci
 npm run dist
 ```
 
@@ -114,11 +116,16 @@ addresses. Review notes received from other people before clicking a button:
 their configured headers and payload are sent to the endpoint. Response bodies
 are rendered as text and are not persisted by the plugin; requests have no
 automatic retry or persistence. Transport and other request failures use a safe
-generic error message rather than exposing underlying details.
+generic error message rather than exposing underlying details. HTTPS is
+preferable when headers or payloads contain credentials. Do not put production
+secrets in notes that are shared or synced outside the intended trust boundary.
 
 ## Development
 
+For a fresh clone, run `npm ci` before the commands below:
+
 ```sh
+npm ci
 npm test
 npm run dist
 ```
