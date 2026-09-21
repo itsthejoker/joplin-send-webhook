@@ -81,7 +81,7 @@ Replace the illustrative 32-character ID with the ID of the source note.
 | `success_confetti` | Optional; `false` | Must be exactly `true` or `false`. `true` shows confetti after a successful response. |
 | `print_response` | Optional; `false` | Must be exactly `true` or `false`. `true` displays the full textual response below the status. |
 | `button_text` | Optional; `Send Webhook` | Label shown on the button; it cannot be empty. |
-| `background_color` | Optional | Button background. See [supported color syntax](#supported-color-syntax). |
+| `background_color` | Optional | Generated control area background. See [supported color syntax](#supported-color-syntax). |
 
 ### Supported color syntax
 
