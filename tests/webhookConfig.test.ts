@@ -41,6 +41,20 @@ describe('parseWebhookSettings', () => {
     });
   });
 
+  test('ignores comments and blank lines in CRLF input', () => {
+    expect(parseWebhookSettings('\r\n  # comment\r\n\r\n  url = https://example.com/hook  \r\n')).toEqual({
+      ok: true,
+      config: {
+        url: 'https://example.com/hook',
+        payload: { kind: 'empty' },
+        headers: {},
+        successConfetti: false,
+        printResponse: false,
+        buttonText: 'Send Webhook',
+      },
+    });
+  });
+
   test('parses plain-text and note payloads', () => {
     const textResult = parseWebhookSettings('url=https://example.com\ndata=hello world');
     const noteResult = parseWebhookSettings('url=https://example.com\ndata=@note-123');
@@ -130,12 +144,29 @@ describe('parseWebhookSettings', () => {
     );
   });
 
+  test('rejects header names outside the HTTP token grammar', () => {
+    expect(parseWebhookSettings('url=https://example.com\nheaders={"Bad Name":"x"}')).toEqual({
+      ok: false,
+      errors: ['headers contains invalid header name "Bad Name".'],
+    });
+  });
+
+  test('rejects header values containing prohibited control characters', () => {
+    expect(parseWebhookSettings('url=https://example.com\nheaders={"X-Test":"a\\r\\nb"}')).toEqual({
+      ok: false,
+      errors: ['Header "X-Test" must not contain NUL, CR, or LF.'],
+    });
+  });
+
   test('accepts supported background colors and rejects injection-like values', () => {
     [
       'red',
       '#abc',
       '#abcd',
       '#aabbccdd',
+      'transparent',
+      'currentColor',
+      'rebeccapurple',
       'rgb(10, 20, 30)',
       'rgba(10%, 20%, 30%, 50%)',
       'hsl(120, 50%, 50%)',
@@ -152,6 +183,13 @@ describe('parseWebhookSettings', () => {
     expect(parseWebhookSettings('url=https://example.com\nbackground_color=url(evil)')).toEqual({
       ok: false,
       errors: expect.arrayContaining(['background_color is not a supported color.']),
+    });
+  });
+
+  test('rejects unknown alphabetic background colors', () => {
+    expect(parseWebhookSettings('url=https://example.com\nbackground_color=notacolor')).toEqual({
+      ok: false,
+      errors: ['background_color is not a supported color.'],
     });
   });
 });

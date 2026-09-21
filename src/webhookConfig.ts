@@ -18,6 +18,33 @@ export type ParseResult =
   | { ok: true; config: WebhookConfig }
   | { ok: false; errors: string[] };
 
+const CSS_NAMED_COLORS = new Set([
+  'aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'black',
+  'blanchedalmond', 'blue', 'blueviolet', 'brown', 'burlywood', 'cadetblue', 'chartreuse',
+  'chocolate', 'coral', 'cornflowerblue', 'cornsilk', 'crimson', 'currentcolor', 'cyan',
+  'darkblue', 'darkcyan', 'darkgoldenrod', 'darkgray', 'darkgreen', 'darkgrey', 'darkkhaki',
+  'darkmagenta', 'darkolivegreen', 'darkorange', 'darkorchid', 'darkred', 'darksalmon',
+  'darkseagreen', 'darkslateblue', 'darkslategray', 'darkslategrey', 'darkturquoise',
+  'darkviolet', 'deeppink', 'deepskyblue', 'dimgray', 'dimgrey', 'dodgerblue', 'firebrick',
+  'floralwhite', 'forestgreen', 'fuchsia', 'gainsboro', 'ghostwhite', 'gold', 'goldenrod',
+  'gray', 'green', 'greenyellow', 'grey', 'honeydew', 'hotpink', 'indianred', 'indigo',
+  'ivory', 'khaki', 'lavender', 'lavenderblush', 'lawngreen', 'lemonchiffon', 'lightblue',
+  'lightcoral', 'lightcyan', 'lightgoldenrodyellow', 'lightgray', 'lightgreen', 'lightgrey',
+  'lightpink', 'lightsalmon', 'lightseagreen', 'lightskyblue', 'lightslategray',
+  'lightslategrey', 'lightsteelblue', 'lightyellow', 'lime', 'limegreen', 'linen', 'magenta',
+  'maroon', 'mediumaquamarine', 'mediumblue', 'mediumorchid', 'mediumpurple',
+  'mediumseagreen', 'mediumslateblue', 'mediumspringgreen', 'mediumturquoise',
+  'mediumvioletred', 'midnightblue', 'mintcream', 'mistyrose', 'moccasin', 'navajowhite',
+  'navy', 'oldlace', 'olive', 'olivedrab', 'orange', 'orangered', 'orchid', 'palegoldenrod',
+  'palegreen', 'paleturquoise', 'palevioletred', 'papayawhip', 'peachpuff', 'peru', 'pink',
+  'plum', 'powderblue', 'purple', 'rebeccapurple', 'red', 'rosybrown', 'royalblue',
+  'saddlebrown', 'salmon', 'sandybrown', 'seagreen', 'seashell', 'sienna', 'silver',
+  'skyblue', 'slateblue', 'slategray', 'slategrey', 'snow', 'springgreen', 'steelblue',
+  'tan', 'teal', 'thistle', 'tomato', 'transparent', 'turquoise', 'violet', 'wheat', 'white',
+  'whitesmoke', 'yellow', 'yellowgreen',
+]);
+const HTTP_HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+
 export function parseWebhookSettings(source: string): ParseResult {
   const settings: Record<string, string> = Object.create(null) as Record<string, string>;
   const errors: string[] = [];
@@ -97,13 +124,28 @@ export function parseWebhookSettings(source: string): ParseResult {
       } else {
         const candidate = parsedHeaders as Record<string, unknown>;
         const headerNames = Object.keys(candidate);
+        let validHeaders = true;
         for (let i = 0; i < headerNames.length; i += 1) {
-          if (typeof candidate[headerNames[i]] !== 'string') {
-            errors.push('headers must be a JSON object with string values.');
-            break;
+          const headerName = headerNames[i];
+          const headerValue = candidate[headerName];
+          if (typeof headerValue !== 'string') {
+            if (errors.indexOf('headers must be a JSON object with string values.') === -1) {
+              errors.push('headers must be a JSON object with string values.');
+            }
+            validHeaders = false;
+            continue;
+          }
+          if (!HTTP_HEADER_NAME_PATTERN.test(headerName)) {
+            errors.push('headers contains invalid header name ' + JSON.stringify(headerName) + '.');
+            validHeaders = false;
+            continue;
+          }
+          if (/[\0\r\n]/.test(headerValue)) {
+            errors.push('Header ' + JSON.stringify(headerName) + ' must not contain NUL, CR, or LF.');
+            validHeaders = false;
           }
         }
-        if (errors.indexOf('headers must be a JSON object with string values.') === -1) {
+        if (validHeaders) {
           headers = candidate as Record<string, string>;
         }
       }
@@ -156,7 +198,7 @@ function isSupportedColor(value: string): boolean {
     return true;
   }
 
-  if (/^[a-zA-Z]+$/.test(value)) return true;
+  if (CSS_NAMED_COLORS.has(value.toLowerCase())) return true;
 
   const number = '[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)';
   const colorComponent = number + '%?';
