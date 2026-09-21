@@ -1,0 +1,16 @@
+{
+	"manifest_version": 1,
+	"id": "com.joekaufeld.sendwebhook",
+	"app_min_version": "3.7",
+	"version": "1.0.0",
+	"name": "Webhook Button",
+	"description": " Turn a page into a button that sends a webhook payload to anywhere you want, then displays the response!",
+	"author": "Joe Kaufeld",
+	"homepage_url": "",
+	"repository_url": "https://github.com/itsthejoker/joplin-send-webhook",
+	"keywords": [],
+	"categories": [],
+	"screenshots": [],
+	"icons": {},
+	"promo_tile": {}
+}
