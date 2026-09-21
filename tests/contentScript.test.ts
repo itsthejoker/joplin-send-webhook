@@ -1,4 +1,6 @@
 import contentScript from '../src/contentScript';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface FenceToken {
   info: string;
@@ -119,6 +121,14 @@ describe('webhook-settings Markdown renderer', () => {
       { name: 'webview.js' },
     ]);
     expect(assets.every((asset: { name: string }) => !asset.name.includes('/'))).toBe(true);
+  });
+
+  test('places every bare asset beside the nested content script for Joplin resolution', () => {
+    const assetDirectory = path.join(__dirname, '../src/contentScript');
+
+    for (const asset of contentScript({}).assets()) {
+      expect(fs.existsSync(path.join(assetDirectory, asset.name))).toBe(true);
+    }
   });
 
   test('strips one final newline and preserves UTF-8 source exactly', () => {

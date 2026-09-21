@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { attachWebhookControls, installWebhookControls } = require('../src/webview');
+const { attachWebhookControls, installWebhookControls } = require('../src/contentScript/webview');
 const initialMatchMedia = window.matchMedia;
 
 function encoded(value) {
@@ -209,7 +209,7 @@ describe('webhook webview controls', () => {
   });
 
   test('styles the control through scoped rules including a reduced-motion fallback', () => {
-    const css = fs.readFileSync(path.join(__dirname, '../src/webhook.css'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '../src/contentScript/webhook.css'), 'utf8');
     expect(css).toContain('.webhook-control');
     expect(css).toContain('.webhook-control .webhook-button');
     expect(css).toContain('.webhook-control .webhook-status.webhook-success');
