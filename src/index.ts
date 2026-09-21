@@ -1,8 +1,9 @@
 import joplin from 'api';
+import { ContentScriptType } from 'api/types';
+import { registerWebhookRuntime } from './pluginRuntime';
 
 joplin.plugins.register({
 	onStart: async function() {
-		// eslint-disable-next-line no-console
-		console.info('Hello world. Test plugin started!');
+		await registerWebhookRuntime(joplin, ContentScriptType.MarkdownItPlugin, (url, init) => fetch(url, init));
 	},
 });
