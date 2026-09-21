@@ -79,7 +79,19 @@ Replace the illustrative 32-character ID with the ID of the source note.
 | `success_confetti` | Optional; `false` | Must be exactly `true` or `false`. `true` shows confetti after a successful response. |
 | `print_response` | Optional; `false` | Must be exactly `true` or `false`. `true` displays the full textual response below the status. |
 | `button_text` | Optional; `Send Webhook` | Label shown on the button; it cannot be empty. |
-| `background_color` | Optional | Button background: a CSS named keyword; `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`; or `rgb()`/`rgba()` and `hsl()`/`hsla()` with numeric or percentage components. |
+| `background_color` | Optional | Button background. See [supported color syntax](#supported-color-syntax). |
+
+### Supported color syntax
+
+`background_color` accepts only these forms:
+
+- A named CSS keyword, or `#RGB`, `#RGBA`, `#RRGGBB`, or `#RRGGBBAA`.
+- `rgb(red, green, blue)`, where each component is a signed or unsigned decimal number or percentage; commas are required.
+- `rgba(red, green, blue, alpha)`, with the same red, green, and blue components plus a numeric or percentage alpha; commas are required.
+- `hsl(hue, saturation%, lightness%)`, where hue is numeric and saturation and lightness require `%`; commas are required.
+- `hsla(hue, saturation%, lightness%, alpha)`, with the same hue, saturation, and lightness components plus a numeric or percentage alpha; commas are required.
+
+CSS space-separated or slash-separated color forms are not supported.
 
 The request body is always sent as raw text—there is no form encoding. When
 `data` is JSON, the plugin infers `Content-Type: application/json`; for literal
