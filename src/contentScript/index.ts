@@ -13,10 +13,13 @@ function escapeHtml(value: string): string {
 
 function fallbackFence(tokens: any[], index: number): string {
   const token = tokens[index];
-  return '<pre><code>' + escapeHtml(token && token.content ? token.content : '') + '</code></pre>';
+  const info = String(token && token.info ? token.info : '').trim();
+  const language = info ? info.split(/\s+/)[0] : '';
+  const languageClass = language ? ' class="language-' + escapeHtml(language) + '"' : '';
+  return '<pre><code' + languageClass + '>' + escapeHtml(token && token.content ? token.content : '') + '</code></pre>';
 }
 
-function renderWebhookSettings(source: string): string {
+function renderWebhookSettings(source: string, markup: string, info: string): string {
   const result = parseWebhookSettings(source);
   const encodedSource = escapeHtml(Buffer.from(source, 'utf8').toString('base64'));
   let label: string;
@@ -37,7 +40,7 @@ function renderWebhookSettings(source: string): string {
   }
 
   return '<div class="joplin-editable webhook-control" data-webhook-settings="' + encodedSource + '"' + style + '>'
-    + '<pre class="joplin-source" data-joplin-language="webhook-settings" data-joplin-source-open="```webhook-settings&NewLine;" data-joplin-source-close="```">' + escapeHtml(source) + '</pre>'
+    + '<pre class="joplin-source" data-joplin-language="webhook-settings" data-joplin-source-open="' + escapeHtml(markup + info) + '&NewLine;" data-joplin-source-close="&NewLine;' + escapeHtml(markup) + '">' + escapeHtml(source) + '</pre>'
     + '<button class="webhook-button" type="button"' + disabled + '>' + escapeHtml(label) + '</button>'
     + '<div class="webhook-status" role="status" aria-live="polite">' + escapeHtml(error) + '</div>'
     + '</div>';
@@ -56,7 +59,8 @@ export default function contentScript(_context: unknown) {
 
         const content = String(token.content || '');
         const source = content.endsWith('\n') ? content.slice(0, -1) : content;
-        return renderWebhookSettings(source);
+        const markup = String(token.markup || '```');
+        return renderWebhookSettings(source, markup, String(token.info || ''));
       };
     },
 

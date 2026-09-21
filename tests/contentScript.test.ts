@@ -3,6 +3,7 @@ import contentScript from '../src/contentScript';
 interface FenceToken {
   info: string;
   content: string;
+  markup?: string;
 }
 
 function createRenderer(previousFence?: (...args: unknown[]) => string) {
@@ -18,9 +19,37 @@ function createRenderer(previousFence?: (...args: unknown[]) => string) {
   return markdownIt.renderer.rules.fence as (...args: unknown[]) => string;
 }
 
-function renderWebhook(content: string): string {
+function renderFence(token: FenceToken): string {
   const render = createRenderer();
-  return render([{ info: 'webhook-settings', content }], 0, {}, {}, {});
+  return render([token], 0, {}, {}, {});
+}
+
+function renderWebhook(content: string): string {
+  return renderFence({ info: 'webhook-settings', content });
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&NewLine;/g, '\n')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+function readAttribute(output: string, attribute: string): string {
+  const matched = output.match(new RegExp(attribute + '="([^"]*)"'));
+  expect(matched).not.toBeNull();
+  return decodeHtml(matched![1]);
+}
+
+function reconstructFencedMarkdown(output: string): string {
+  const source = output.match(/<pre class="joplin-source"[^>]*>([\s\S]*?)<\/pre>/);
+  expect(source).not.toBeNull();
+  return readAttribute(output, 'data-joplin-source-open')
+    + decodeHtml(source![1])
+    + readAttribute(output, 'data-joplin-source-close');
 }
 
 describe('webhook-settings Markdown renderer', () => {
@@ -39,7 +68,7 @@ describe('webhook-settings Markdown renderer', () => {
     const output = renderWebhook(source);
 
     expect(output).toContain('<div class="joplin-editable webhook-control"');
-    expect(output).toContain('<pre class="joplin-source" data-joplin-language="webhook-settings" data-joplin-source-open="```webhook-settings&NewLine;" data-joplin-source-close="```">');
+    expect(output).toContain('<pre class="joplin-source" data-joplin-language="webhook-settings" data-joplin-source-open="```webhook-settings&NewLine;" data-joplin-source-close="&NewLine;```">');
     expect(output).toContain('<button class="webhook-button" type="button">Deliver</button>');
     expect(output).toContain('<div class="webhook-status" role="status" aria-live="polite"></div>');
     expect(output).toContain('style="--webhook-background:#aabbcc"');
@@ -86,5 +115,33 @@ describe('webhook-settings Markdown renderer', () => {
     expect(encoded).not.toBeNull();
     expect(Buffer.from(encoded![1], 'base64').toString('utf8')).toBe(source.slice(0, -1));
     expect(output).toContain('Café ☕');
+  });
+
+  test('reconstructs the original fenced Markdown using decoded source metadata', () => {
+    const source = 'url=https://example.com\nbutton_text=Deliver';
+    const output = renderWebhook(source + '\n');
+
+    expect(reconstructFencedMarkdown(output)).toBe('```webhook-settings\n' + source + '\n```');
+  });
+
+  test('preserves tilde delimiters in round-trip source metadata', () => {
+    const source = 'url=https://example.com\n# ~~~';
+    const output = renderFence({ info: ' webhook-settings ', markup: '~~~', content: source + '\n' });
+
+    expect(reconstructFencedMarkdown(output)).toBe('~~~ webhook-settings \n' + source + '\n~~~');
+  });
+
+  test('preserves four-backtick delimiters when source contains triple backticks', () => {
+    const source = 'url=https://example.com\n# ```';
+    const output = renderFence({ info: 'webhook-settings', markup: '````', content: source + '\n' });
+
+    expect(reconstructFencedMarkdown(output)).toBe('````webhook-settings\n' + source + '\n````');
+  });
+
+  test('uses safe basic code markup when no prior fence renderer exists', () => {
+    const render = createRenderer();
+
+    expect(render([{ info: 'json', content: '<script>' }], 0, {}, {}, {}))
+      .toBe('<pre><code class="language-json">&lt;script&gt;</code></pre>');
   });
 });
