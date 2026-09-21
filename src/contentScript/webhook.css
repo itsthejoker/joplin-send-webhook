@@ -1,0 +1,98 @@
+.webhook-control {
+  align-items: center;
+  background: var(--webhook-background, transparent);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  margin: 1rem auto;
+  max-width: 44rem;
+  padding: 2rem;
+  position: relative;
+  text-align: center;
+}
+
+.webhook-control .joplin-source {
+  display: none;
+}
+
+.webhook-control .webhook-button {
+  background: #1d70b8;
+  border: 2px solid #155a94;
+  border-radius: 0.4rem;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  min-height: 3.25rem;
+  padding: 0.7rem 1.5rem;
+}
+
+.webhook-control .webhook-button:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.webhook-control .webhook-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.webhook-control .webhook-status {
+  font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.webhook-control .webhook-status.webhook-success {
+  color: #126b2e;
+}
+
+.webhook-control .webhook-status.webhook-error {
+  color: #a61b1b;
+}
+
+.webhook-control .webhook-response {
+  box-sizing: border-box;
+  margin: 0;
+  max-height: 20rem;
+  max-width: 100%;
+  overflow: auto;
+  text-align: left;
+  white-space: pre-wrap;
+  width: 100%;
+  word-break: break-word;
+}
+
+.webhook-control .webhook-confetti {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.webhook-control .webhook-confetti i {
+  animation: webhook-confetti-fall 1.4s ease-out forwards;
+  background: hsl(calc(var(--webhook-confetti-index) * 20deg), 82%, 55%);
+  height: 0.65rem;
+  left: calc((var(--webhook-confetti-index) + 0.5) * 5.5%);
+  position: absolute;
+  top: -0.75rem;
+  transform: rotate(calc(var(--webhook-confetti-index) * 31deg));
+  width: 0.38rem;
+}
+
+@keyframes webhook-confetti-fall {
+  to {
+    opacity: 0;
+    transform: translateY(12rem) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webhook-control .webhook-confetti,
+  .webhook-control .webhook-confetti i {
+    animation: none;
+    display: none;
+  }
+}
