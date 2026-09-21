@@ -3,13 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const { attachWebhookControls } = require('../src/contentScript/webview');
+const initialMatchMedia = window.matchMedia;
 
 function encoded(value) {
   return Buffer.from(value, 'utf8').toString('base64');
 }
 
-function createControl(source, label) {
-  document.body.innerHTML = '<div class="webhook-control" data-webhook-settings="' + encoded(source) + '">'
+function createControl(source, label, contentScriptId = 'webhook-content-script') {
+  document.body.innerHTML = '<div class="webhook-control" data-webhook-settings="' + encoded(source) + '" data-webhook-content-script-id="' + contentScriptId + '">'
     + '<button class="webhook-button" type="button">' + label + '</button>'
     + '<div class="webhook-status" role="status"></div>'
     + '</div>';
@@ -31,6 +32,8 @@ describe('webhook webview controls', () => {
   afterEach(() => {
     jest.useRealTimers();
     document.body.innerHTML = '';
+    if (initialMatchMedia === undefined) delete window.matchMedia;
+    else window.matchMedia = initialMatchMedia;
   });
 
   test('sends decoded Unicode settings once while pending, then restores the original label after a successful 204', async () => {
@@ -46,7 +49,10 @@ describe('webhook webview controls', () => {
     expect(button.disabled).toBe(true);
     expect(button.textContent).toBe('Sending…');
     expect(bridge.postMessage).toHaveBeenCalledTimes(1);
-    expect(bridge.postMessage).toHaveBeenCalledWith({ type: 'sendWebhook', source });
+    expect(bridge.postMessage).toHaveBeenCalledWith(
+      'webhook-content-script',
+      { type: 'sendWebhook', source },
+    );
 
     resolveRequest(response());
     await Promise.resolve();
@@ -98,7 +104,7 @@ describe('webhook webview controls', () => {
     ['malformed result', () => Promise.resolve({ private: 'private malformed result' }), 'url=https://example.test/hook'],
     ['source decode failure', jest.fn(), '%%%private encoded source%%%'],
   ])('renders only the generic error for %s', async (_caseName, postMessage, source) => {
-    document.body.innerHTML = '<div class="webhook-control" data-webhook-settings="' + source + '">'
+    document.body.innerHTML = '<div class="webhook-control" data-webhook-settings="' + source + '" data-webhook-content-script-id="webhook-content-script">'
       + '<button class="webhook-button" type="button">Send</button><div class="webhook-status"></div></div>';
     const control = document.querySelector('.webhook-control');
     const bridge = { postMessage: jest.fn(postMessage) };
@@ -128,6 +134,24 @@ describe('webhook webview controls', () => {
     button.click();
     await Promise.resolve();
     expect(bridge.postMessage).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    ['missing', null],
+    ['blank', '  '],
+  ])('rejects a %s content script ID without calling the bridge', async (_caseName, contentScriptId) => {
+    const control = createControl('url=https://example.test/hook', 'Send');
+    if (contentScriptId === null) control.removeAttribute('data-webhook-content-script-id');
+    else control.setAttribute('data-webhook-content-script-id', contentScriptId);
+    const bridge = { postMessage: jest.fn(() => Promise.resolve(response())) };
+    attachWebhookControls(document, bridge);
+
+    control.querySelector('.webhook-button').click();
+    await Promise.resolve();
+
+    expect(bridge.postMessage).not.toHaveBeenCalled();
+    expect(control.querySelector('.webhook-status').textContent)
+      .toBe('The webhook request could not be completed.');
   });
 
   test('creates exactly 18 confetti pieces only for opted-in successful responses and cleans them up', async () => {

@@ -6,14 +6,17 @@ interface FenceToken {
   markup?: string;
 }
 
-function createRenderer(previousFence?: (...args: unknown[]) => string) {
+function createRenderer(
+  previousFence?: (...args: unknown[]) => string,
+  context: { contentScriptId?: string } = {},
+) {
   const markdownIt = {
     renderer: {
       rules: previousFence ? { fence: previousFence } : {},
     },
   };
 
-  const extension = contentScript({});
+  const extension = contentScript(context);
   extension.plugin(markdownIt, {});
 
   return markdownIt.renderer.rules.fence as (...args: unknown[]) => string;
@@ -76,6 +79,14 @@ describe('webhook-settings Markdown renderer', () => {
     const encoded = output.match(/data-webhook-settings="([^"]+)"/);
     expect(encoded).not.toBeNull();
     expect(Buffer.from(encoded![1], 'base64').toString('utf8')).toBe(source);
+  });
+
+  test('propagates the Joplin content script ID as an escaped control attribute', () => {
+    const render = createRenderer(undefined, { contentScriptId: 'webhook-id-<&"' });
+    const output = render([{ info: 'webhook-settings', content: 'url=https://example.com' }], 0, {}, {}, {});
+
+    expect(readAttribute(output, 'data-webhook-content-script-id')).toBe('webhook-id-<&"');
+    expect(output).toContain('data-webhook-content-script-id="webhook-id-&lt;&amp;&quot;"');
   });
 
   test('escapes HTML-sensitive button labels and preserved source', () => {

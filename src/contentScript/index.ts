@@ -19,7 +19,7 @@ function fallbackFence(tokens: any[], index: number): string {
   return '<pre><code' + languageClass + '>' + escapeHtml(token && token.content ? token.content : '') + '</code></pre>';
 }
 
-function renderWebhookSettings(source: string, markup: string, info: string): string {
+function renderWebhookSettings(source: string, markup: string, info: string, contentScriptId: string): string {
   const result = parseWebhookSettings(source);
   const encodedSource = escapeHtml(Buffer.from(source, 'utf8').toString('base64'));
   let label: string;
@@ -39,14 +39,15 @@ function renderWebhookSettings(source: string, markup: string, info: string): st
     disabled = ' disabled';
   }
 
-  return '<div class="joplin-editable webhook-control" data-webhook-settings="' + encodedSource + '"' + style + '>'
+  return '<div class="joplin-editable webhook-control" data-webhook-settings="' + encodedSource
+    + '" data-webhook-content-script-id="' + escapeHtml(contentScriptId) + '"' + style + '>'
     + '<pre class="joplin-source" data-joplin-language="webhook-settings" data-joplin-source-open="' + escapeHtml(markup + info) + '&NewLine;" data-joplin-source-close="&NewLine;' + escapeHtml(markup) + '">' + escapeHtml(source) + '</pre>'
     + '<button class="webhook-button" type="button"' + disabled + '>' + escapeHtml(label) + '</button>'
     + '<div class="webhook-status" role="status" aria-live="polite">' + escapeHtml(error) + '</div>'
     + '</div>';
 }
 
-export default function contentScript(_context: unknown) {
+export default function contentScript(context: { contentScriptId?: string }) {
   return {
     plugin(markdownIt: any, _options: unknown) {
       const previousFence: FenceRenderer = markdownIt.renderer.rules.fence || fallbackFence;
@@ -60,7 +61,7 @@ export default function contentScript(_context: unknown) {
         const content = String(token.content || '');
         const source = content.endsWith('\n') ? content.slice(0, -1) : content;
         const markup = String(token.markup || '```');
-        return renderWebhookSettings(source, markup, String(token.info || ''));
+        return renderWebhookSettings(source, markup, String(token.info || ''), String(context.contentScriptId || ''));
       };
     },
 

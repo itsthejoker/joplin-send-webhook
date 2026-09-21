@@ -138,7 +138,9 @@
 
           try {
             var source = decodeSource(control.getAttribute('data-webhook-settings'));
-            var result = await bridge.postMessage({ type: 'sendWebhook', source: source });
+            var contentScriptId = control.getAttribute('data-webhook-content-script-id');
+            if (!contentScriptId || contentScriptId.trim().length === 0) throw new Error('Invalid content script ID');
+            var result = await bridge.postMessage(contentScriptId, { type: 'sendWebhook', source: source });
             renderResult(control, status, result);
           } catch (_error) {
             renderGenericError(control, status);
